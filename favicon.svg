@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#17121f"/>
+      <stop offset="1" stop-color="#06040a"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6e2a4"/>
+      <stop offset=".55" stop-color="#d4ac45"/>
+      <stop offset="1" stop-color="#9c7420"/>
+    </linearGradient>
+    <linearGradient id="fire" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd98a"/>
+      <stop offset=".45" stop-color="#e2603a"/>
+      <stop offset="1" stop-color="#8e1f1f"/>
+    </linearGradient>
+    <clipPath id="gate">
+      <path d="M13 27v-6.5a3 3 0 0 1 6 0V27z"/>
+    </clipPath>
+  </defs>
+
+  <rect width="32" height="32" rx="7" fill="url(#bg)"/>
+  <rect x=".7" y=".7" width="30.6" height="30.6" rx="6.4" fill="none" stroke="#d4ac45" stroke-opacity=".28" stroke-width="1"/>
+
+  <!-- شرارات رماد -->
+  <circle cx="5.4" cy="8.2" r=".8" fill="#e2603a" opacity=".55"/>
+  <circle cx="26.8" cy="7" r=".65" fill="#d4ac45" opacity=".6"/>
+  <circle cx="27.6" cy="12.4" r=".55" fill="#d4ac45" opacity=".4"/>
+  <circle cx="4.6" cy="14" r=".5" fill="#e2603a" opacity=".4"/>
+
+  <!-- الحصن -->
+  <path d="M8 27V8h4v4h2V8h4v4h2V8h4v19z" fill="url(#gold)"/>
+  <!-- بوّابة مظلمة -->
+  <path d="M13 27v-6.5a3 3 0 0 1 6 0V27z" fill="#0a0710"/>
+  <!-- جمرة داخل البوّابة -->
+  <g clip-path="url(#gate)">
+    <path d="M16 19.6c1.7 2.2 2.6 3.8 2.6 5.2a2.6 2.6 0 0 1-5.2 0c0-1.4.9-3 2.6-5.2z" fill="url(#fire)"/>
+  </g>
+  <!-- شقوق الحرب -->
+  <path d="M9.6 15.6l1.4 2.2-1 1.8" stroke="#7d5a16" stroke-width=".8" fill="none" stroke-linecap="round" opacity=".7"/>
+  <path d="M22.4 16.4l-1.2 2 .8 1.6" stroke="#7d5a16" stroke-width=".8" fill="none" stroke-linecap="round" opacity=".7"/>
+</svg>
