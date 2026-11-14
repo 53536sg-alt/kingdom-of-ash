@@ -103,10 +103,10 @@
         }
         A.game.go('location', 'mountain');
         A.game.toast(q.has('farmer')
-          ? L('الفلاح حسين — الشيخ الجديد عند الحضيرة (نسخة 1.76). اقترب واضغط E لتسلّم عليه.',
-              'Farmer Hussein — the new elder at the barn (v1.76). Approach and press E to greet him.')
-          : L('وضع عرض الجبال (نسخة 1.76) — الكاميرا مقفلة على الشخصية، انقر على قوس الطريق أو اضغط E لدخوله',
-              'Mountain demo mode (v1.76) — the camera stays on the character. Click a road arch or press E to enter.'), 'good');
+          ? L('الفلاح حسين — الشيخ الجديد عند الحضيرة (نسخة 1.77). اقترب واضغط E لتسلّم عليه.',
+              'Farmer Hussein — the new elder at the barn (v1.77). Approach and press E to greet him.')
+          : L('وضع عرض الجبال (نسخة 1.77) — الكاميرا مقفلة على الشخصية، انقر على قوس الطريق أو اضغط E لدخوله',
+              'Mountain demo mode (v1.77) — the camera stays on the character. Click a road arch or press E to enter.'), 'good');
       }
     } catch (e) { /* تجاهل */ }
 

@@ -1204,8 +1204,21 @@
           g.fill();
           g.globalAlpha = 1;
           const ang = (a.lieAngle == null ? Math.PI * 0.5 : a.lieAngle) * (a.flip ? -1 : 1);
+          // نرفع نقطة الارتكاز بمقدار أدنى نقطة بعد الدوران، فيستقر الجسم
+          // على خط الأرض بدل أن يغرق نصفه تحته، ونمنع خروجه عن القماش.
+          const cs = Math.cos(ang), sn = Math.sin(ang);
+          let yMax = -Infinity, xMin = Infinity, xMax = -Infinity;
+          const pts = [[-w / 2, -h], [w / 2, -h], [-w / 2, 0], [w / 2, 0]];
+          for (let i = 0; i < pts.length; i++) {
+            const rx = pts[i][0] * cs - pts[i][1] * sn;
+            const ry = pts[i][0] * sn + pts[i][1] * cs;
+            if (ry > yMax) yMax = ry;
+            if (rx < xMin) xMin = rx;
+            if (rx > xMax) xMax = rx;
+          }
+          const bx = Math.min(Math.max(ax, -xMin + 1), W - xMax - 1);
           g.save();
-          g.translate(ax, a.y);
+          g.translate(bx, a.y - yMax);
           g.rotate(ang);
           g.imageSmoothingEnabled = false;
           if (a.alpha != null) g.globalAlpha = a.alpha;

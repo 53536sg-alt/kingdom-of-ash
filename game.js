@@ -625,7 +625,7 @@
             <span class="tb-ico">♪</span><span class="tb-txt">الصوت: <b>${A.audio.muted ? 'مكتوم' : 'مفتوح'}</b></span><span class="tb-arrow">›</span>
           </button>
         </div>
-        <div class="title-ver">نسخة 1.76</div>
+        <div class="title-ver">نسخة 1.77</div>
       </div>`;
     const fsBtn = A.$('[data-fs]', G.ui);
     if (fsBtn) {

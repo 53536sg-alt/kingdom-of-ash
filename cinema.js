@@ -39,6 +39,24 @@
   };
   const clamp = A.clamp || ((v, a, b) => Math.max(a, Math.min(b, v)));
   const lerp = A.lerp || ((a, b, k) => a + (b - a) * k);
+  // هندسة الجسم الملقى/الساقط: نرجع نقطة الارتكاز بعد الدوران بحيث
+  // يستقر الجسم على خط الأرض (ay) ولا يغرق نصفه تحتها ولا يطلع خارج القماش.
+  function lyingPose(w, h, ang, ax, ay) {
+    const cs = Math.cos(ang), sn = Math.sin(ang);
+    let yMax = -Infinity, xMin = Infinity, xMax = -Infinity;
+    const pts = [[-w / 2, -h], [w / 2, -h], [-w / 2, 0], [w / 2, 0]];
+    for (let i = 0; i < pts.length; i++) {
+      const px = pts[i][0], py = pts[i][1];
+      const rx = px * cs - py * sn, ry = px * sn + py * cs;
+      if (ry > yMax) yMax = ry;
+      if (rx < xMin) xMin = rx;
+      if (rx > xMax) xMax = rx;
+    }
+    return {
+      x: Math.min(Math.max(ax, -xMin + 1), W - xMax - 1),
+      y: ay - yMax,
+    };
+  }
 
   let raf = 0, last = 0;
 
@@ -1101,9 +1119,11 @@
       for (const c of L.corpses || []) {
         const spr = A.art.spr(c.kind, {});
         const s = c.s * 0.95, w = spr.width * s, h = spr.height * s;
+        const ang = (c.flip ? -1 : 1) * Math.PI * 0.5;
+        const p = lyingPose(w, h, ang, c.x, 258);
         g.save();
-        g.translate(c.x, 256);
-        g.rotate((c.flip ? -1 : 1) * Math.PI * 0.5);
+        g.translate(p.x, p.y);
+        g.rotate(ang);
         g.globalAlpha = 0.4;
         g.drawImage(spr, -w / 2, -h, w, h);
         g.restore();
@@ -1117,9 +1137,13 @@
           const k = clamp(e.dieT / 0.55, 0, 1);
           const spr = A.art.spr(e.kind, { weapon: 'sword' });
           const s = e.s, w = spr.width * s, h = spr.height * s;
+          // الميل الأقصى ٩٠° (ينسدّ على الأرض) بدل ١١١° اللي كانت تخلّيه
+          // يتجاوز الأفق ويغرق نصّه تحت الأرض.
+          const ang = clamp(k, 0, 1) * (Math.PI * 0.5) * (e.x > 240 ? 1 : -1);
+          const p = lyingPose(w, h, ang, e.x, e.y + Math.sin(k * Math.PI) * -4);
           g.save();
-          g.translate(e.x, e.y + Math.sin(k * Math.PI) * -4);
-          g.rotate(k * Math.PI * 0.62 * (e.x > 240 ? 1 : -1));
+          g.translate(p.x, p.y);
+          g.rotate(ang);
           g.globalAlpha = clamp(1 - Math.max(0, e.dieT - 0.7) * 2.6, 0, 1);
           g.drawImage(spr, -w / 2, -h, w, h);
           g.restore();
@@ -1189,12 +1213,14 @@
       const k = clamp((performance.now() - (L.fallAt || performance.now())) / 1450, 0, 1);
       const spr = A.art.spr('hero', { look: hop.look, pose: 'hurt', weapon: 'sword', cloak: true });
       const s = 2.85, w = spr.width * s, h = spr.height * s;
+      const ang = clamp(k, 0, 1) * (Math.PI * 0.48);
+      const p = lyingPose(w, h, ang, 240, 258);
       g.save();
-      g.translate(240, 258);
-      g.rotate(k * Math.PI * 0.48);
+      g.translate(p.x, p.y);
+      g.rotate(ang);
       g.globalAlpha = 0.92;
       g.imageSmoothingEnabled = false;
-      g.drawImage(spr, -w / 2, -h + s, w, h);
+      g.drawImage(spr, -w / 2, -h, w, h);
       g.restore();
       g.globalAlpha = 1;
     }
