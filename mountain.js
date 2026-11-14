@@ -370,7 +370,7 @@
           <div class="mtn-trail" id="mtn-trail">${dots}<i id="mtn-dot"></i></div>
         </div>
         <div class="mtn-prompt" id="mtn-prompt">سر في الوادي. اقترب من الضوء لتتأمّل.</div>
-        <div class="mtn-hint">← → أو WASD للحركة — انقر الأرض للمشي — انقر على قوس الطريق أو E للدخول — البوابة غربًا <span style="opacity:.55">· إصدار 1.77</span></div>
+        <div class="mtn-hint">← → أو WASD للحركة — انقر الأرض للمشي — انقر على قوس الطريق أو E للدخول — البوابة غربًا <span style="opacity:.55">· إصدار 1.78</span></div>
         <div class="mtn-actions">
           <button type="button" class="btn ghost" data-mtn="map">عودة للخريطة</button>
           <button type="button" class="btn primary" data-mtn="meditate" disabled>تأمّل</button>

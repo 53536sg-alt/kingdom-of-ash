@@ -13,15 +13,50 @@
 
   S.init = function () {
     if (S.ctx) {
-      if (S.ctx.state === 'suspended') S.ctx.resume();
+      if (S.ctx.state === 'suspended') S.ctx.resume().catch(function () {});
       return;
     }
     const C = window.AudioContext || window.webkitAudioContext;
     if (!C) return;
-    S.ctx = new C();
+    // latencyHint:'playback' يطلب مخزنًا صوتيًا أكبر → تقطيع أقل على التلفون.
+    try { S.ctx = new C({ latencyHint: 'playback' }); }
+    catch (e) { S.ctx = new C(); }
     S.master = S.ctx.createGain();
     S.master.gain.value = S.muted ? 0 : 0.4;
-    S.master.connect(S.ctx.destination);
+    // محدِّد ذروة قبل مكبّر الصوت: يمنع القصّ (clip) والتشويش لما تتراكم
+    // عدة طبقات موسيقية بنفس اللحظة — وهو سبب «الأصوات المغوشة» على التلفون.
+    if (S.ctx.createDynamicsCompressor) {
+      S.limiter = S.ctx.createDynamicsCompressor();
+      S.limiter.threshold.setValueAtTime(-8, S.ctx.currentTime);
+      S.limiter.knee.setValueAtTime(6, S.ctx.currentTime);
+      S.limiter.ratio.setValueAtTime(12, S.ctx.currentTime);
+      S.limiter.attack.setValueAtTime(0.004, S.ctx.currentTime);
+      S.limiter.release.setValueAtTime(0.22, S.ctx.currentTime);
+      S.master.connect(S.limiter);
+      S.limiter.connect(S.ctx.destination);
+    } else {
+      S.master.connect(S.ctx.destination);
+    }
+    // المتصفح قد يوقف الصوت (مكالمة، قفل الشاشة، تبديل تطبيق). نستأنفه بهدوء
+    // ونعيد مزامنة الإيقاع حتى لا تنطلق أشرطة متراكمة دفعة واحدة.
+    S._hidden = document.hidden;
+    S.ctx.onstatechange = function () {
+      if (!S.ctx || S._hidden || S.muted) return;
+      if (S.ctx.state === 'suspended') {
+        S._resync = true;
+        S.ctx.resume().catch(function () {});
+      }
+    };
+    document.addEventListener('visibilitychange', function () {
+      if (!S.ctx) return;
+      S._hidden = document.hidden;
+      if (document.hidden) {
+        S.ctx.suspend().catch(function () {});
+      } else {
+        S._resync = true;
+        S.ctx.resume().catch(function () {});
+      }
+    });
     // حافلة الموسيقى منفصلة عن المؤثرات حتى يبقى الخليط متوازنًا
     S.musicBus = S.ctx.createGain();
     S.musicBus.gain.value = 0.0001;
@@ -829,6 +864,9 @@
   function playBar(t, bar, when) {
     const beat = 60 / t.bpm;
     const barLen = beat * t.beats;
+    // مدة استمرار الطبقة: لا تتجاوز الشريط كثيرًا، وإلا تراكمت طبقتان
+    // فوق بعضهما في مقاطع القتال السريعة وصار الصوت مغوشًا ومرتفعًا.
+    const sustain = (extra) => Math.min(barLen + extra, barLen * 1.2 + 0.12);
     const i = bar % t.chords.length;
     const chord = t.chords[i];
     const t0 = (when || 0) + 0.05;
@@ -836,21 +874,21 @@
     // فرش النحاس/الأوتار: طبقتان منحرفتان قليلًا لكل نغمة
     chord.forEach((m, k) => {
       const p = ((k % 2) ? 0.18 : -0.18) * (t.padWidth || 1);
-      mtone(m, barLen + 1.1, {
+      mtone(m, sustain(1.1), {
         type: t.padType, vol: t.padVol, when: t0,
         attack: 0.9, release: 1.3, filter: t.padFilter, q: 0.8, detune: -6, pan: p,
       });
-      mtone(m, barLen + 1.1, {
+      mtone(m, sustain(1.1), {
         type: t.padType, vol: t.padVol * 0.75, when: t0,
         attack: 1.1, release: 1.4, filter: t.padFilter, q: 0.8, detune: 7, pan: -p,
       });
       // أوكتاف منخفض يمنح الإحساس بالاتساع
-      mtone(m - 12, barLen + 1.2, {
+      mtone(m - 12, sustain(1.2), {
         type: 'sine', vol: t.padVol * 0.55, when: t0,
         attack: 1.2, release: 1.4, filter: 420,
       });
       if (t.padShimmer) {
-        mtone(m + 12, barLen + 0.9, {
+        mtone(m + 12, sustain(0.9), {
           type: 'sine', vol: t.padVol * 0.16, when: t0 + 0.08,
           attack: 1.4, release: 1.4, filter: 3000, pan: -p * 0.6,
         });
@@ -860,7 +898,7 @@
     // جوقة بعيدة
     if (t.choir) {
       chord.slice(0, 3).forEach((m, k) => {
-        mtone(m + 12, barLen + 0.9, {
+        mtone(m + 12, sustain(0.9), {
           type: 'sine', vol: t.choir, when: t0 + 0.15 + k * 0.04,
           attack: 1.6, release: 1.4, filter: 1600, pan: (k - 1) * 0.25,
         });
@@ -879,7 +917,7 @@
         if (k % 2 === 0) drum(t0 + k * step * beat, 0.018, 52, 0.18);
       });
     } else {
-      mtone(t.bass[i], barLen + 0.7, {
+      mtone(t.bass[i], sustain(0.7), {
         type: 'triangle', vol: 0.022, when: t0,
         attack: 0.12, release: 0.9, filter: 340,
       });
@@ -1009,15 +1047,28 @@
       if (gen !== S._gen) return;
       S.musicBus.gain.setTargetAtTime(6.0, S.ctx.currentTime, 0.45);
       const beat = 60 / t.bpm;
-      const barMs = Math.max(900, beat * t.beats * 1000);
+      const barLen = beat * t.beats;
       let bar = 0;
-      const step = () => {
+      let nextT = S.ctx.currentTime + 0.12;
+      // جدولة مبنية على ساعة الصوت نفسها (وليست على setTimeout) حتى لا
+      // ينزاح الإيقاع وتتراكم الطبقات. ولو رجع التطبيق من الخلفية نُعيد
+      // المزامنة بدل إطلاق كل الأشرطة المتراكمة دفعة واحدة (هذا اللي كان
+      // يخلّي الصوت «يعلك» فجأة).
+      const tick = () => {
         if (gen !== S._gen) return;
-        playBar(t, bar++, 0);
-        const drift = Math.random() * 60;
-        S._timer = setTimeout(step, barMs - 90 + drift);
+        const now = S.ctx.currentTime;
+        if (S._resync || nextT < now - barLen) {
+          S._resync = false;
+          nextT = now + 0.1;
+        }
+        let guard = 0;
+        while (nextT < now + 0.35 && guard++ < 4) {
+          playBar(t, bar++, nextT - now);
+          nextT += barLen;
+        }
+        S._timer = setTimeout(tick, 120);
       };
-      step();
+      tick();
     }, 380);
   };
 
